@@ -96,3 +96,55 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## API Endpoints
+
+This project provides the backend API for a purchase financing application.
+
+### Authentication
+
+*   **POST /auth/login**
+    *   Logs in a user.
+    *   **Request Body:** \`{ "clientNumber": "string (8 digits)", "password_dont_send_to_client": "string" }\`
+    *   **Success Response (200 OK):** \`{ "message": "Login successful", "userId": "string (uuid)" }\`
+    *   **Error Response (401 Unauthorized):** If credentials are invalid.
+    *   **Error Response (400 Bad Request):** If input validation fails (e.g., clientNumber not 8 digits).
+
+### Purchases
+
+*Note: For the current mock implementation, \`userId\` must be passed as a query parameter. In a production setup with JWT authentication, this would typically be derived from the authentication token.*
+
+*   **GET /purchases/candidate?userId=:userId**
+    *   Retrieves a list of purchases eligible for deferral for the specified user.
+    *   **Query Parameters:**
+        *   \`userId\`: (string, UUID) - The ID of the user.
+    *   **Success Response (200 OK):** \`Array<PurchaseDto>\`
+        *   \`PurchaseDto: { "id": "string", "userId": "string", "productName": "string", "amount": number, "purchaseDate": "Date", "status": "CANDIDATE" | "DEFERRED" | "PAID" }\`
+    *   **Error Response (401 Unauthorized):** If \`userId\` is missing in mock setup.
+
+*   **GET /purchases/deferred?userId=:userId**
+    *   Retrieves a list of purchases already deferred by the specified user.
+    *   **Query Parameters:**
+        *   \`userId\`: (string, UUID) - The ID of the user.
+    *   **Success Response (200 OK):** \`Array<PurchaseDto>\`
+    *   **Error Response (401 Unauthorized):** If \`userId\` is missing in mock setup.
+
+### Deferrals
+
+*Note: For the current mock implementation, \`userId\` must be passed as a query parameter for the POST endpoint.*
+
+*   **POST /deferrals?userId=:userId**
+    *   Creates a new deferral for selected purchases.
+    *   **Query Parameters:**
+        *   \`userId\`: (string, UUID) - The ID of the user making the deferral.
+    *   **Request Body:** \`DeferralRequestDto\`
+        *   \`{ "purchaseIds": ["string (uuid)"], "deferralMonths": 3 | 6 | 9 | 12 | 18 | 24 }\`
+    *   **Success Response (201 Created - typically, but 200 OK for now is fine):** \`DeferralReceiptDto\`
+        *   \`DeferralReceiptDto: { "deferralId": "string", "userId": "string", "selectedPurchases": Array<PurchaseDto>, "totalAmountDeferred": number, "interestRate": number, "monthlyPayment": number, "deferralMonths": number, "termsAndConditionsAccepted": boolean, "operationDate": "Date" }\`
+    *   **Error Response (400 Bad Request):** If input validation fails (e.g., empty \`purchaseIds\`, invalid \`deferralMonths\`), or if a purchase is not eligible.
+    *   **Error Response (401 Unauthorized):** If \`userId\` is missing in mock setup.
+    *   **Error Response (404 Not Found):** If one or more \`purchaseIds\` are not found for the user.
+
+*   **GET /deferrals/terms-and-conditions**
+    *   Retrieves the terms and conditions for the purchase deferral program.
+    *   **Success Response (200 OK):** \`{ "title": "string", "content": "string" }\`
